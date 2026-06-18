@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments
+.venv/
+venv/
+env/
+.conda/
+
+# IDE
+.vscode/
+.idea/
+.spyproject/
+
+# Experiment outputs
+results/
+*.log
+*.lp
+*.mps
+*.sol
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tool caches
+.ruff_cache/

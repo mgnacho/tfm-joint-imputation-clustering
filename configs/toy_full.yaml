@@ -1,0 +1,62 @@
+experiment_name: toy_final_train_test
+output_root: results
+continue_on_error: true
+save_incremental: true
+create_plots: true
+
+randomness:
+  global_seed: 42
+  dataset_seeds:
+    2: 27748062
+    3: 28472966
+
+problem:
+  k: 3
+  n_values: [60]
+  d_values: [2, 3]
+  train_fraction: 0.70
+  missing_rates: [0.20, 0.30]
+  missing_seeds: [1, 2, 3]
+  outlier_rate: 0.08
+  bounds_margin_fraction: 0.10
+
+# The objective is fully normalized:
+#   mean L1 clustering distance per coordinate
+# + rho * mean deviation per missing cell
+# + lambda * mean missing proportion of selected centers.
+# These values are algebraic rescalings of the previous unnormalized grid,
+# not values selected from the new TEST set.
+hyperparameters:
+  rho_values: [0.0025, 0.025]
+  lambda_values: [0.0, 0.03, 0.075, 0.15, 0.30]
+
+imputation:
+  candidate_names:
+    - mean
+    - median
+    - mode_rounded
+    - random_empirical
+    - knn
+    - iterative_bayes
+    - iterative_rf
+    - pmm_like
+  mode_decimals: 2
+  knn_neighbors: 5
+  pmm_donors: 5
+
+solver:
+  reference_time_limit: 3600
+  train_time_limit: 600
+  test_time_limit: 60
+  reference_mip_gap: 0.000001
+  mip_gap: 0.02
+  mip_focus_train: 3
+  threads: 0
+  output_flag: 0
+
+plots:
+  diagnostic_dimension: 3
+  diagnostic_missing_rate: 0.30
+  diagnostic_missing_seed: 1
+  diagnostic_rho: 0.025
+  diagnostic_lambdas: [0.0, 0.075, 0.30]

@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the associated master's thesis."
+title: "Joint imputation and L1 clustering — confirmatory experiment"
+type: software
+authors:
+  - family-names: "González Matilla"
+    given-names: "Ignacio"
+version: 0.1.0
+date-released: 2026-06-18

@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tfm-joint-imputation-clustering"
+version = "0.1.0"
+description = "Confirmatory TRAIN-TEST experiment for simultaneous missing-data imputation and L1 clustering."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+authors = [
+  {name = "Ignacio González Matilla"}
+]
+dependencies = [
+  "numpy==1.26.4",
+  "pandas==2.2.3",
+  "scipy==1.13.1",
+  "scikit-learn==1.4.2",
+  "scikit-learn-extra==0.3.0",
+  "matplotlib==3.8.4",
+  "PyYAML==6.0.2"
+]
+
+[project.optional-dependencies]
+solver = ["gurobipy>=11,<14"]
+dev = [
+  "pytest==8.3.5",
+  "ruff==0.11.2"
+]
+
+[project.scripts]
+jic-run = "joint_imputation_clustering.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

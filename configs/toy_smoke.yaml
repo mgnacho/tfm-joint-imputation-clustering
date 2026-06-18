@@ -1,0 +1,49 @@
+# Installation check only. This is not the scientific experiment.
+experiment_name: toy_smoke_test
+output_root: results
+continue_on_error: false
+save_incremental: true
+create_plots: false
+
+randomness:
+  global_seed: 42
+  dataset_seeds:
+    2: 27748062
+    3: 28472966
+
+problem:
+  k: 3
+  n_values: [30]
+  d_values: [2]
+  train_fraction: 0.70
+  missing_rates: [0.20]
+  missing_seeds: [1]
+  outlier_rate: 0.08
+  bounds_margin_fraction: 0.10
+
+hyperparameters:
+  rho_values: [0.025]
+  lambda_values: [0.0]
+
+imputation:
+  candidate_names: [mean, median, knn]
+  mode_decimals: 2
+  knn_neighbors: 5
+  pmm_donors: 5
+
+solver:
+  reference_time_limit: 120
+  train_time_limit: 60
+  test_time_limit: 30
+  reference_mip_gap: 0.001
+  mip_gap: 0.05
+  mip_focus_train: 1
+  threads: 0
+  output_flag: 0
+
+plots:
+  diagnostic_dimension: 2
+  diagnostic_missing_rate: 0.20
+  diagnostic_missing_seed: 1
+  diagnostic_rho: 0.025
+  diagnostic_lambdas: [0.0]
