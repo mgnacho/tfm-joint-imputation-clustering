@@ -28,13 +28,16 @@ Con datos incompletos se comparan:
 
 En TRAIN:
 
-\[
-\frac{1}{n d}\sum_i d_i
-+ \rho\frac{1}{|\Omega_{mis}|}\sum_{(i,\ell)\in\Omega_{mis}}u_{i\ell}
-+ \lambda\frac{1}{K}\sum_j q_j y_j,
-\]
+En TRAIN:
 
-con `q_j` igual a la proporción de dimensiones originalmente ausentes de la observación candidata a centro.
+```math
+\frac{1}{nd}\sum_i d_i
++ \rho \frac{1}{|\Omega_{\mathrm{mis}}|}
+  \sum_{(i,\ell)\in\Omega_{\mathrm{mis}}} u_{i\ell}
++ \lambda \frac{1}{K}\sum_j q_j y_j
+```
+
+donde $q_j$ es la proporción de dimensiones originalmente ausentes de la observación candidata a centro.
 
 En TEST los centros y los métodos de imputación llegan fijados desde TRAIN, por lo que no aparece el término `lambda`.
 
