@@ -53,7 +53,7 @@ def configure_model(
     model.Params.OutputFlag = int(output_flag)
     model.Params.TimeLimit = float(time_limit)
     model.Params.MIPGap = float(mip_gap)
-    model.Params.Seed = int(seed)
+    model.Params.Seed = int(seed) % 2147483647
     model.Params.Threads = int(threads)
     if mip_focus is not None:
         model.Params.MIPFocus = int(mip_focus)
