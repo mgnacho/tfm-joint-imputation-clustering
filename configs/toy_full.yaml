@@ -46,7 +46,7 @@ imputation:
 
 solver:
   reference_time_limit: 3600
-  train_time_limit: 600
+  train_time_limit: 1800
   test_time_limit: 60
   reference_mip_gap: 0.000001
   mip_gap: 0.02
