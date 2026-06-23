@@ -41,14 +41,18 @@ def configure_logging(log_path: Path, level: str = "INFO") -> None:
     )
 
 
-def atomic_write_csv(rows: Iterable[dict[str, Any]], path: Path, columns: list[str] | None = None) -> None:
+def atomic_write_csv(
+    rows: Iterable[dict[str, Any]],
+    path: Path,
+    columns: list[str] | None = None,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     frame = pd.DataFrame(list(rows))
     if columns is not None:
         for column in columns:
             if column not in frame:
                 frame[column] = pd.Series(dtype="object")
-        frame = frame[columns + [c for c in frame.columns if c not in columns]]
+        frame = frame[columns + [column for column in frame.columns if column not in columns]]
     tmp = path.with_suffix(path.suffix + ".tmp")
     frame.to_csv(tmp, index=False)
     os.replace(tmp, path)
@@ -101,6 +105,7 @@ def write_manifest(run_dir: Path, config: dict[str, Any], repository_root: Path)
                 "scikit-learn-extra",
                 "matplotlib",
                 "PyYAML",
+                "ucimlrepo",
                 "gurobipy",
             ]
         ),

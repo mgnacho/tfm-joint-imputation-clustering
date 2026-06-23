@@ -87,18 +87,24 @@ def evaluate_partition(
     labels_ref_kmeans: np.ndarray,
     labels_ref_pam: np.ndarray,
     labels_ref_l1: np.ndarray,
-    y_true: np.ndarray,
+    y_true: np.ndarray | None,
     centers: np.ndarray,
     train_scales: dict[str, np.ndarray],
 ) -> dict[str, float | int]:
+    del centers  # Retained in the public signature for backward compatibility.
     common_silhouette = safe_silhouette_scores(x_complete, labels)
     own_silhouette = safe_silhouette_scores(x_imputed, labels)
     imputation = imputation_metrics(x_complete, x_imputed, missing_mask, train_scales)
+    ari_true = (
+        float(adjusted_rand_score(np.asarray(y_true, dtype=int), labels))
+        if y_true is not None
+        else np.nan
+    )
     return {
         "ari_ref_kmeans": float(adjusted_rand_score(labels_ref_kmeans, labels)),
         "ari_ref_pam": float(adjusted_rand_score(labels_ref_pam, labels)),
         "ari_ref_l1model": float(adjusted_rand_score(labels_ref_l1, labels)),
-        "ari_true": float(adjusted_rand_score(y_true, labels)),
+        "ari_true": ari_true,
         "silhouette_common_euclidean": common_silhouette["euclidean"],
         "silhouette_common_manhattan": common_silhouette["manhattan"],
         "silhouette_own_euclidean": own_silhouette["euclidean"],

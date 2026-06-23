@@ -25,7 +25,7 @@ def evaluate_baseline(
     labels_ref_kmeans_test: np.ndarray,
     labels_ref_pam_test: np.ndarray,
     labels_ref_l1_test: np.ndarray,
-    y_test_true: np.ndarray,
+    y_test_true: np.ndarray | None,
     train_scales: dict[str, np.ndarray],
     imputation_runtime: float,
 ) -> dict[str, Any]:

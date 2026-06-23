@@ -88,7 +88,15 @@ def paired_comparisons(proposed: pd.DataFrame, baselines: pd.DataFrame) -> pd.Da
     if proposed.empty or baselines.empty:
         return pd.DataFrame()
     keys = ["scenario_id", "n_total", "d", "missing_rate_target", "missing_seed"]
-    merged = proposed.merge(baselines, on=keys, suffixes=("_proposed", "_baseline"))
+    baseline_for_merge = baselines.drop(
+        columns=["rho", "lambda_center"],
+        errors="ignore",
+    )
+    merged = proposed.merge(
+        baseline_for_merge,
+        on=keys,
+        suffixes=("_proposed", "_baseline"),
+    )
     output = merged[
         keys
         + [

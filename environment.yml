@@ -14,4 +14,5 @@ dependencies:
   - pip
   - pip:
       - scikit-learn-extra==0.3.0
+      - ucimlrepo==0.0.7
       - "gurobipy>=11,<14"

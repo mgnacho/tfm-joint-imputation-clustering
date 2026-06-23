@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tfm-joint-imputation-clustering"
-version = "0.1.0"
-description = "Confirmatory TRAIN-TEST experiment for simultaneous missing-data imputation and L1 clustering."
+version = "0.2.0"
+description = "Reproducible TRAIN-TEST experiments for simultaneous missing-data imputation and L1 clustering."
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 authors = [
@@ -18,7 +18,8 @@ dependencies = [
   "scikit-learn==1.4.2",
   "scikit-learn-extra==0.3.0",
   "matplotlib==3.8.4",
-  "PyYAML==6.0.2"
+  "PyYAML==6.0.2",
+  "ucimlrepo==0.0.7"
 ]
 
 [project.optional-dependencies]

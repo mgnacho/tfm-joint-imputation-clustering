@@ -1,0 +1,75 @@
+experiment_name: wholesale_final_train_test
+output_root: results
+continue_on_error: true
+save_incremental: true
+create_plots: true
+
+data:
+  source: wholesale_uci
+  uci_id: 292
+  expected_instances: 440
+  feature_columns:
+    - Fresh
+    - Milk
+    - Grocery
+    - Frozen
+    - Detergents_Paper
+    - Delicassen
+  external_columns:
+    - Channel
+    - Region
+  stratify_columns:
+    - Channel
+    - Region
+  # No max_train_rows or max_test_rows: use all 308 TRAIN and 132 TEST customers.
+
+randomness:
+  global_seed: 42
+  split_seed: 42
+
+problem:
+  k: 4
+  train_fraction: 0.70
+  missing_rates: [0.20, 0.30]
+  missing_seeds: [1, 2, 3]
+  bounds_margin_fraction: 0.10
+
+preprocessing:
+  scaler: robust
+  fit_scope: train_complete
+  quantile_range: [25.0, 75.0]
+
+# Deliberately empty until the final normalized rho and lambda are closed
+# from the independent toy campaign. TEST must not be used to fill these values.
+hyperparameters:
+  rho_values: []
+  lambda_values: []
+
+imputation:
+  candidate_names:
+    - mean
+    - median
+    - mode_rounded
+    - random_empirical
+    - knn
+    - iterative_bayes
+    - iterative_rf
+    - pmm_like
+  mode_decimals: 2
+  knn_neighbors: 5
+  pmm_donors: 5
+
+solver:
+  reference_time_limit: 3600
+  train_time_limit: 1800
+  test_time_limit: 300
+  reference_mip_gap: 0.000001
+  mip_gap: 0.02
+  mip_focus_train: 3
+  threads: 0
+  output_flag: 0
+
+marketing:
+  enabled: true
+  include_references: true
+  include_baselines: true
