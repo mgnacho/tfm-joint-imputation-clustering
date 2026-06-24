@@ -42,8 +42,8 @@ preprocessing:
 # Deliberately empty until the final normalized rho and lambda are closed
 # from the independent toy campaign. TEST must not be used to fill these values.
 hyperparameters:
-  rho_values: []
-  lambda_values: []
+  rho_values: [0.0025]
+  lambda_values: [0.0, 0.075]
 
 imputation:
   candidate_names:
