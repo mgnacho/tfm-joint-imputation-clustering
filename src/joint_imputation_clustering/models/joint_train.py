@@ -32,6 +32,7 @@ def solve_joint_train_model(
     threads: int,
     x_train_complete_reference: np.ndarray,
     original_train_indices: np.ndarray,
+    mip_start: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     n, n_features = x_train_missing.shape
     n_candidates = candidate_tensor_train.shape[0]
@@ -136,6 +137,79 @@ def solve_joint_train_model(
         model.addConstr(u[i, feature] >= xhat[i, feature] - reference)
         model.addConstr(u[i, feature] >= -xhat[i, feature] + reference)
 
+    mip_start_used = mip_start is not None
+    mip_start_name: str | None = None
+    mip_start_objective = np.nan
+
+    if mip_start is not None:
+        x_start = np.asarray(mip_start["x_imputed_train"], dtype=float)
+        centers_start = np.asarray(mip_start["center_indices"], dtype=int)
+        assigned_center_start = np.asarray(
+            mip_start["assigned_center_indices"], dtype=int
+        )
+        methods_start = np.asarray(
+            mip_start["method_indices_by_feature"], dtype=int
+        )
+
+        if x_start.shape != x_train_missing.shape:
+            raise ValueError("MIP start imputed matrix has incompatible shape")
+        if len(centers_start) != k or len(np.unique(centers_start)) != k:
+            raise ValueError("MIP start must contain exactly K distinct centers")
+        if np.any((centers_start < 0) | (centers_start >= n)):
+            raise ValueError("MIP start contains an invalid center index")
+        if len(assigned_center_start) != n:
+            raise ValueError("MIP start assignments have incorrect length")
+        if not set(assigned_center_start.tolist()).issubset(set(centers_start.tolist())):
+            raise ValueError("MIP start assigns a row to a non-center")
+        if len(methods_start) != n_features:
+            raise ValueError("MIP start must provide one method per feature")
+        if np.any((methods_start < 0) | (methods_start >= n_candidates)):
+            raise ValueError("MIP start contains an invalid method index")
+
+        center_set = set(centers_start.tolist())
+
+        for j in range(n):
+            y[j].Start = 1.0 if j in center_set else 0.0
+
+        for i in range(n):
+            assigned_center = int(assigned_center_start[i])
+            for j in range(n):
+                z[i, j].Start = 1.0 if j == assigned_center else 0.0
+
+        for candidate in range(n_candidates):
+            for feature in range(n_features):
+                t[candidate, feature].Start = (
+                    1.0 if candidate == int(methods_start[feature]) else 0.0
+                )
+
+        for i, feature in missing_positions:
+            xhat[i, feature].Start = float(x_start[i, feature])
+            selected_candidate = int(methods_start[feature])
+            reference_value = float(
+                candidate_tensor_train[selected_candidate, i, feature]
+            )
+            u[i, feature].Start = abs(
+                float(x_start[i, feature]) - reference_value
+            )
+
+        for i in range(n):
+            for j in range(n):
+                for feature in range(n_features):
+                    w[i, j, feature].Start = abs(
+                        float(x_start[i, feature])
+                        - float(x_start[j, feature])
+                    )
+
+        for i in range(n):
+            assigned_center = int(assigned_center_start[i])
+            dvar[i].Start = float(
+                np.abs(x_start[i] - x_start[assigned_center]).sum()
+            )
+
+        mip_start_name = str(mip_start.get("name", "pam"))
+        mip_start_objective = float(mip_start.get("objective", np.nan))
+        model.update()
+
     configure_model(
         model,
         time_limit=time_limit,
@@ -210,6 +284,9 @@ def solve_joint_train_model(
 
     return {
         **diagnostics,
+        "mip_start_used": mip_start_used,
+        "mip_start_name": mip_start_name,
+        "mip_start_objective": mip_start_objective,
         "centers_idx": centers_idx,
         "centers_values": centers_values,
         "center_missing_info": pd.DataFrame(center_rows),

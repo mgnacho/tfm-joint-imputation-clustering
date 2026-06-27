@@ -1,0 +1,70 @@
+experiment_name: wholesale_smoke_pam_mip_start
+output_root: results
+continue_on_error: false
+save_incremental: true
+create_plots: true
+data:
+  source: wholesale_uci
+  uci_id: 292
+  expected_instances: 440
+  feature_columns:
+  - Fresh
+  - Milk
+  - Grocery
+  - Frozen
+  - Detergents_Paper
+  - Delicassen
+  external_columns:
+  - Channel
+  - Region
+  stratify_columns:
+  - Channel
+  - Region
+  max_train_rows: 24
+  max_test_rows: 12
+randomness:
+  global_seed: 42
+  split_seed: 42
+problem:
+  k: 4
+  train_fraction: 0.7
+  missing_rates:
+  - 0.2
+  missing_seeds:
+  - 1
+  bounds_margin_fraction: 0.1
+preprocessing:
+  scaler: robust
+  fit_scope: train_complete
+  quantile_range:
+  - 25.0
+  - 75.0
+hyperparameters:
+  rho_values:
+  - 0.0025
+  lambda_values:
+  - 0.03
+imputation:
+  candidate_names:
+  - mean
+  - median
+  - knn
+  mode_decimals: 2
+  knn_neighbors: 5
+  pmm_donors: 5
+solver:
+  reference_time_limit: 30
+  train_time_limit: 30
+  test_time_limit: 15
+  reference_mip_gap: 0.02
+  mip_gap: 0.1
+  mip_focus_train: 3
+  threads: 0
+  output_flag: 1
+marketing:
+  enabled: true
+  include_references: true
+  include_baselines: true
+mip_start:
+  enabled: true
+  strategy: best_pam_train_objective

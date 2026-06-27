@@ -89,6 +89,7 @@ class WholesaleResultStore:
         "marketing_assignments",
         "marketing_cluster_profiles",
         "marketing_association",
+        "mip_start_audit",
         "errors",
     ]
 
@@ -317,6 +318,7 @@ def run_wholesale_experiment(
     imputation_config = config.section("imputation")
     solver = config.section("solver")
     marketing = config.optional_section("marketing")
+    mip_start_config = config.optional_section("mip_start")
 
     loading_started = time.perf_counter()
     wholesale = fetch_wholesale_customers(
@@ -639,6 +641,8 @@ def run_wholesale_experiment(
                 audit["missing_seed"] = missing_seed
                 store.rows["candidate_audit"].extend(audit.to_dict("records"))
 
+                pam_mip_start_candidates: list[dict[str, Any]] = []
+
                 for candidate_index, method_name in enumerate(candidates.names):
                     for cluster_algorithm in ["kmeans", "pam"]:
                         baseline = evaluate_baseline(
@@ -664,6 +668,55 @@ def run_wholesale_experiment(
                             train_scales=train_scales,
                             imputation_runtime=candidates.runtimes[method_name],
                         )
+                        if cluster_algorithm == "pam":
+                            center_indices = np.asarray(
+                                baseline["center_indices_train"], dtype=int
+                            )
+                            labels_train_start = np.asarray(
+                                baseline["labels_train"], dtype=int
+                            )
+                            assigned_center_indices = center_indices[
+                                labels_train_start
+                            ].copy()
+                            assigned_center_indices[center_indices] = center_indices
+                            x_train_start = np.asarray(
+                                candidates.train[candidate_index], dtype=float
+                            )
+
+                            clustering_normalized = float(
+                                np.abs(
+                                    x_train_start
+                                    - x_train_start[assigned_center_indices]
+                                ).sum()
+                                / float(len(x_train_start) * dimension)
+                            )
+                            center_penalty_normalized = float(
+                                np.isnan(
+                                    x_train_missing[center_indices]
+                                ).sum()
+                                / float(k * dimension)
+                            )
+
+                            pam_mip_start_candidates.append(
+                                {
+                                    "name": f"{method_name}_pam",
+                                    "method_name": method_name,
+                                    "candidate_index": candidate_index,
+                                    "x_imputed_train": x_train_start,
+                                    "center_indices": center_indices,
+                                    "assigned_center_indices": assigned_center_indices,
+                                    "method_indices_by_feature": np.full(
+                                        dimension,
+                                        candidate_index,
+                                        dtype=int,
+                                    ),
+                                    "clustering_normalized": clustering_normalized,
+                                    "center_penalty_normalized": (
+                                        center_penalty_normalized
+                                    ),
+                                }
+                            )
+
                         baseline_metadata = {
                             "scenario_id": scenario_id,
                             "n_total": n_total,
@@ -759,7 +812,55 @@ def run_wholesale_experiment(
                     for lambda_center in [
                         float(value) for value in hyperparameters["lambda_values"]
                     ]:
+                        selected_mip_start: dict[str, Any] | None = None
+                        if bool(mip_start_config.get("enabled", False)):
+                            if not pam_mip_start_candidates:
+                                raise RuntimeError(
+                                    "PAM MIP start requested but no PAM baseline was built"
+                                )
+
+                            scored_starts: list[dict[str, Any]] = []
+                            for start in pam_mip_start_candidates:
+                                start_objective = float(
+                                    start["clustering_normalized"]
+                                    + lambda_center
+                                    * start["center_penalty_normalized"]
+                                )
+                                scored_starts.append(
+                                    {**start, "objective": start_objective}
+                                )
+
+                            selected_mip_start = min(
+                                scored_starts,
+                                key=lambda row: float(row["objective"]),
+                            )
+
                         experiment_id += 1
+
+                        if selected_mip_start is not None:
+                            store.rows["mip_start_audit"].append(
+                                {
+                                    "experiment_id": experiment_id,
+                                    "scenario_id": scenario_id,
+                                    "missing_rate_target": missing_rate,
+                                    "missing_seed": missing_seed,
+                                    "rho": rho,
+                                    "lambda_center": lambda_center,
+                                    "start_name": selected_mip_start["name"],
+                                    "start_method": selected_mip_start["method_name"],
+                                    "start_candidate_index": selected_mip_start["candidate_index"],
+                                    "start_objective": selected_mip_start["objective"],
+                                    "start_clustering_normalized": selected_mip_start["clustering_normalized"],
+                                    "start_center_penalty_normalized": selected_mip_start["center_penalty_normalized"],
+                                    "start_centers": ",".join(
+                                        map(
+                                            str,
+                                            selected_mip_start["center_indices"].tolist(),
+                                        )
+                                    ),
+                                }
+                            )
+
                         train_started = time.perf_counter()
                         train_result = solve_joint_train_model(
                             x_train_missing,
@@ -785,6 +886,7 @@ def run_wholesale_experiment(
                             threads=int(solver["threads"]),
                             x_train_complete_reference=x_train_complete,
                             original_train_indices=train_ids,
+                            mip_start=selected_mip_start,
                         )
                         train_total_runtime = time.perf_counter() - train_started
 
@@ -889,6 +991,9 @@ def run_wholesale_experiment(
                             "missing_rate_train_real": float(mask_train.mean()),
                             "missing_rate_test_real": float(mask_test.mean()),
                             "objective_fully_normalized": True,
+                            "mip_start_used": train_result["mip_start_used"],
+                            "mip_start_name": train_result["mip_start_name"],
+                            "mip_start_objective": train_result["mip_start_objective"],
                             "train_status": train_result["status"],
                             "train_status_name": train_result["status_name"],
                             "train_is_certified": train_result[
